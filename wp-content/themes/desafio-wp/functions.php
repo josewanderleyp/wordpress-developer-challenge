@@ -392,28 +392,12 @@ add_filter('image_send_to_editor', 'remove_thumbnail_dimensions', 10); // Remove
 // Remove Filters
 remove_filter('the_excerpt', 'wpautop'); // Remove <p> tags from Excerpt altogether
 
-// Shortcodes
-add_shortcode('html5_shortcode_demo', 'html5_shortcode_demo'); // You can place [html5_shortcode_demo] in Pages, Posts now.
-add_shortcode('html5_shortcode_demo_2', 'html5_shortcode_demo_2'); // Place [html5_shortcode_demo_2] in Pages, Posts now.
-
 // Shortcodes above would be nested like this -
 // [html5_shortcode_demo] [html5_shortcode_demo_2] Here's the page title! [/html5_shortcode_demo_2] [/html5_shortcode_demo]
 
 /*------------------------------------*\
 	Custom Post Types
 \*------------------------------------*/
-
-// Shortcode Demo with Nested Capability
-function html5_shortcode_demo($atts, $content = null)
-{
-    return '<div class="shortcode-demo">' . do_shortcode($content) . '</div>'; // do_shortcode allows for nested Shortcodes
-}
-
-// Shortcode Demo with simple <h2> tag
-function html5_shortcode_demo_2($atts, $content = null) // Demo Heading H2 shortcode, allows for nesting within above element. Fully expandable.
-{
-    return '<h2>' . $content . '</h2>';
-}
 
 // Vídeos
 function post_type_videos() {
@@ -430,7 +414,7 @@ function post_type_videos() {
             'public' => true,
             'has_archive' => false,
             'menu_icon' => 'dashicons-book',
-            'supports' => array('title', 'excerpt', 'thumbnail', 'editor'),
+            'supports' => array('title', 'thumbnail'),
             'rewrite' => array(
                 'slug' => 'videos',
                 'with_front' => true
@@ -466,3 +450,74 @@ function category_videos() {
 add_action( 'init', 'category_videos');
 
 
+add_action( 'add_meta_boxes', 'cd_meta_box_add' );
+function cd_meta_box_add() {
+    add_meta_box( 'my-meta-box-id', 'Vídeos', 'cd_meta_box_cb', 'videos', 'normal', 'high' );
+}
+
+function cd_meta_box_cb( $post ) {
+    $values = get_post_custom( $post->ID );
+    
+    $description = isset( $values['my_meta_box_description'] ) ? esc_attr( $values['my_meta_box_description'][0] ) : '';
+    $time = isset( $values['my_meta_box_time'] ) ? esc_attr( $values['my_meta_box_time'][0] ) : '';
+    $sinopse = isset( $values['my_meta_box_sinopse'] ) ? esc_attr( $values['my_meta_box_sinopse'][0] ) : '';
+    $video = isset( $values['my_meta_box_video'] ) ? esc_attr( $values['my_meta_box_video'][0] ) : '';
+
+    wp_nonce_field( 'my_meta_box_nonce', 'meta_box_nonce' );
+
+    ?>
+        <p>
+            <label for="my_meta_box_description">Descrição</label>
+            <input type="text" name="my_meta_box_description" id="my_meta_box_description" value="<?php echo $description; ?>" />
+        </p>
+
+        <p>
+            <label for="my_meta_box_time">Tempo de Duração</label>
+            <input type="text" name="my_meta_box_time" id="my_meta_box_time" value="<?php echo $time; ?>" />
+        </p>
+
+        <p>
+            <label for="my_meta_box_sinopse">Sinopse</label>
+            <input type="text" name="my_meta_box_sinopse" id="my_meta_box_sinopse" value="<?php echo $sinopse; ?>" />
+        </p>
+
+        <p>
+            <label for="my_meta_box_video">Embed de Vídeo</label>
+            <input type="text" name="my_meta_box_video" id="my_meta_box_video" value="<?php echo $video; ?>" />
+        </p>
+    <?php   
+}
+
+add_action( 'save_post', 'cd_meta_box_save' );
+function cd_meta_box_save( $post_id ) {
+    if( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) return;
+
+    if( !current_user_can( 'edit_post', $post_id ) ) return;
+
+    $allowed = array( 
+        'a' => array(
+            'href' => array()
+        )
+    );
+
+    if( isset( $_POST['my_meta_box_description'] ) ){
+        update_post_meta( $post_id, 'my_meta_box_description', wp_kses( $_POST['my_meta_box_description'], $allowed ));
+    }
+
+    if( isset( $_POST['my_meta_box_time'] ) ){
+        update_post_meta( $post_id, 'my_meta_box_time', wp_kses( $_POST['my_meta_box_time'], $allowed ));
+    }
+    
+    if( isset( $_POST['my_meta_box_sinopse'] ) ){
+        update_post_meta( $post_id, 'my_meta_box_sinopse', wp_kses( $_POST['my_meta_box_sinopse'], $allowed ));
+    }
+
+    if( isset( $_POST['my_meta_box_video'] ) ){
+        update_post_meta( $post_id, 'my_meta_box_video', wp_kses( $_POST['my_meta_box_video'], $allowed ));
+    }
+}
+
+function admin_style() {
+  wp_enqueue_style('admin-styles', get_template_directory_uri().'/css/admin.css');
+}
+add_action('admin_enqueue_scripts', 'admin_style');

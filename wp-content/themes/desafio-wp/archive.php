@@ -19,22 +19,23 @@
 						)
 					)
 				);
-
 				$loop = new WP_Query($args);
 
 				$x = 0;
 
 				if( sizeof( $loop -> posts ) ){
 					foreach ($loop -> posts as $key => $video) {
-						$imagem_de_capa = get_field("imagem_de_capa", $video -> ID);
-						$tempo_de_duracao = get_field("tempo_de_duracao", $video -> ID);
+						$values = get_post_custom( $video->ID );
+						$thumb = wp_get_attachment_image_src( get_post_thumbnail_id($video->ID), 'medium'); 
+
+						$time = isset( $values['my_meta_box_time'] ) ? esc_attr( $values['my_meta_box_time'][0] ) : '';
 
 						?>
 							<article class="item">
-								<a href="<?=get_the_permalink($video -> ID)?>"><img src="<?=$imagem_de_capa?>" alt="<?=$video -> post_title?>"></a>
+								<a href="<?=get_the_permalink($video -> ID)?>"><img src="<?=$thumb[0]?>" alt="<?=$video -> post_title?>"></a>
 
 								<div class="tags">
-									<span><?=$tempo_de_duracao?></span>
+									<span><?=$time?></span>
 								</div>
 
 								<h2><a href="<?=get_the_permalink($video -> ID)?>"><?=$video -> post_title?></a></h2>
